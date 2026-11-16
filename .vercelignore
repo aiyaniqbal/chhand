@@ -1,0 +1,9 @@
+training/
+tests/
+docs/screenshots/
+data/*.jsonl
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.env
