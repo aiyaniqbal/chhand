@@ -120,17 +120,17 @@ The frontend is served as static files; it does not require a separate JavaScrip
 
 ```mermaid
 flowchart TD
-    B[Browser: Poems, Meters, Rhymes] --> API[FastAPI application]
-    API --> M[Deterministic meter engine]
-    API --> R[Rhyme matcher and word list]
-    API --> L[LLM client]
-    L --> G[Rewrite candidates]
+    B["Browser: Poems, Meters, Rhymes"] --> API["FastAPI application"]
+    API --> M["Deterministic meter engine"]
+    API --> R["Rhyme matcher and word list"]
+    API --> L["LLM client"]
+    L --> G["Rewrite candidates"]
     G --> M
-    M --> V[Verified candidates and diagnostics]
-    R --> O[API response]
+    M --> V["Verified candidates and diagnostics"]
+    R --> O["API response"]
     V --> O
     O --> B
-    B --> H[Writer accepts or rejects]
+    B --> H["Writer accepts or rejects"]
 ```
 
 The meter engine and rhyme matcher can perform their core work without an LLM API key. The LLM is used for rewrite generation, not for deciding whether a line passes the meter check.
