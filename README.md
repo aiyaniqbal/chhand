@@ -1,389 +1,361 @@
-# Chhand (छंद)
+# Chhand
 
-> AI-Powered, Meter-Aware Hindi Poetry & Lyric Co-Writer
+**A meter-aware writing assistant for Hindi poetry.**
 
-[![Tests](https://github.com/aiyan/chhand/actions/workflows/tests.yml/badge.svg)](https://github.com/aiyan/chhand/actions/workflows/tests.yml)
-**Live Application:** Deployed on Vercel Serverless
+Chhand helps writers work with traditional Hindi matra-based forms. It checks each section of a poem against a selected meter, explains count differences, suggests alternative wording, and provides Hindi rhyme suggestions.
 
----
+The current MVP focuses on Hindi written in Devanagari and on three writing workflows: **Poems**, **Meters**, and **Rhymes**.
 
-## 1. Project Overview
-
-**Chhand (छंद)** is a production-minded Hindi poetry and lyric co-writing studio built for poets, lyricists, song-writers, and computational linguists. It combines a rigorous, deterministic Devanagari meter engine based on classical Pingala Chhand Shastra with an AI-assisted rewrite and rhyming workflow.
-
-### Core Engineering Principle
-> **AI proposes. The deterministic engine verifies. The human decides.**
->
-> The AI must never mark its own generated poetry as meter-correct. Every candidate must pass through the Python meter engine before it can be presented as a verified suggestion. The meter scanner functions completely independently without an LLM API key.
+> **Project status:** MVP. This README describes the functionality included in the current MVP only. It does not present planned finale work as completed functionality.
 
 ---
 
-## 2. Problem Statement
+## The problem
 
-Composing classical Hindi poetry in metered forms (such as *Doha* and *Chaupai*) requires strict adherence to matra counts (*मात्रा काल*):
-- **Doha (दोहा)**: 4 charans structured as **13 | 11 | 13 | 11** matras.
-- **Chaupai (चौपाई)**: 4 charans structured as **16 | 16 | 16 | 16** matras.
+Writing within a traditional meter involves more than choosing words that sound appropriate. Each section must follow a matra pattern, and the writer may need to inspect syllable weight and pronunciation to understand why a line does not fit.
 
-Large Language Models (LLMs) notoriously struggle with tokenization of Indic scripts: a single Devanagari akshara may span 3 to 6 sub-word tokens or bytes. Consequently, LLMs consistently miscount matras, hallucinate prosodic weights, and produce rhythmically broken verse when asked to generate metered poetry.
+This checking is often done manually. It interrupts the writing process and makes it harder for a writer to experiment with alternative phrasing.
+
+Chhand brings meter checking and writing assistance into one workspace.
+
+## What Chhand does
+
+The MVP provides three connected areas:
+
+### Poems
+
+The Poems editor is the main writing workspace. A writer can:
+
+- Enter a poem section by section in Devanagari.
+- Select Doha, Chaupai, or a custom matra pattern.
+- See the calculated and required matra counts for each section.
+- Review matched, over-count, under-count, incomplete, or uncertain results where applicable.
+- Inspect matra and syllable details, including cumulative counts and highlighted positions.
+- Request alternative wording for a line that does not fit the selected target.
+- Accept or reject each suggested rewrite individually.
+- Use rhyme suggestions while working on a poem.
+
+Accepting a suggestion updates the selected section and triggers a fresh analysis. Rejecting a suggestion leaves the original text unchanged.
+
+### Meters
+
+The Meters page explains the supported patterns and lets writers choose a structure before writing.
+
+The current built-in patterns are:
+
+| Meter | Charan pattern | Structure |
+|---|---:|---|
+| Doha | `13 / 11 / 13 / 11` | Four charans with alternating targets |
+| Chaupai | `16 / 16 / 16 / 16` | Four charans with equal targets |
+| Custom | User-defined | Positive integer target for each charan |
+
+The Custom Meter Builder allows a writer to define a pattern and use it in the Poems editor.
+
+The matra pattern is the scope of the current automated check. Traditional conventions beyond the implemented checks should not be assumed to have been validated.
+
+### Rhymes
+
+The Rhymes page provides Hindi rhyme discovery using the project's word list and rhyme-matching logic.
+
+A writer can:
+
+- Search for rhymes using a Hindi word or line ending.
+- View exact and approximate matches separately when returned by the matcher.
+- Explore the available rhyme-ending groups.
+- Copy a result or move it into the poem-writing workflow.
+
+Rhyme quality depends on pronunciation and context. The feature is intended as a writing aid, not as a complete validator for Urdu ghazal conventions or every form of Hindi rhyme.
 
 ---
 
-## 3. Proposed Solution
+## How the analysis works
 
-Chhand separates **creative generation** from **prosodic verification**:
-1. **Deterministic Devanagari Engine**: Implements authentic Pingala Chhand Shastra rules—Unicode normalization, akshara segmentation, conjunct phonology, and laghu/guru weight calculations without probabilistic guesses.
-2. **Interactive Scansion Studio**: Displays syllable-level scansion marks (`•` laghu, `—` guru, `|` caesura) directly beneath the writer's Devanagari text, with hairline visual indicators and instant error diagnosis.
-3. **Generate-and-Verify AI Loop**: When a line breaks meter, the LLM proposes candidate rewrites that preserve semantic intent. Each candidate is independently scanned by the deterministic engine. Only candidates that achieve the exact target count are displayed.
-4. **Phonetic Rhyme Assistant**: Offers dictionary-backed ending sound matches without requiring an LLM connection.
+Meter analysis is performed by the Python engine. It is not delegated to the language model.
 
----
+At a high level, the engine:
 
-## 4. Target Users
+1. Normalizes the submitted Devanagari text while retaining source-position information.
+2. Identifies relevant characters and forms syllable or akshara units.
+3. Assigns laghu and guru weights according to the implemented Hindi matra rules.
+4. Calculates the cumulative matra count for the line.
+5. Compares the result with the selected charan target.
+6. Returns a status, count difference, diagnostic information, and source positions for the interface.
 
-- **Hindi Poets & Shayars**: Composing traditional Dohas, Chaupais, or custom matrik verse with exact rhythmic discipline.
-- **Lyricists & Songwriters**: Crafting song verses and hooks that must fit strict musical time signatures and rhythmic cadences.
-- **Students & Computational Linguists**: Learning or researching Devanagari prosody, syllable weights, and schwa phonology.
-- **Content Creators**: Writing rhymed couplets and social poetry in authentic Devanagari.
+Pronunciation can affect a scan. Schwa handling and other context-dependent readings are treated according to the engine's implemented rules and available overrides. An uncertain reading should be reviewed rather than treated as an unquestionable result.
 
----
+### AI-assisted rewriting
 
-## 5. Key Features
+The rewrite feature uses a generate-and-verify workflow:
 
-- **Devanagari Scansion Engine**: Unicode-aware segmentation of independent vowels, consonants, matras, halants, anusvara, visarga, and conjuncts.
-- **Laghu/Guru Classification**: Calculates matra weights (1 or 2) per syllable with source character offset mapping.
-- **Interactive Poems Studio**: Four-charan couplet editor, current vs. target matra totals, caesura dividers, and break highlighting.
-- **Meter Library (`#meters`)**: Dedicated library with Doha, Chaupai, and Custom cards, interactive scansion detail modal with authentic verified poetry, and a Custom Meter Builder.
-- **Rhyme Discovery Studio (`#rhymes`)**: Dedicated search workspace with exact and approximate phonetic matches, copy actions, "Use in poem" transition, and dictionary rhyme family cards (`-ूर`, `-ार`, `-ान`, etc.).
-- **Deterministic AI Verification Loop**: Multi-candidate generation, rejection of incorrect candidates, retry caps, duplicate filtering, and accept/reject controls.
-- **Zero-Dependency Frontend**: Responsive, lightweight HTML5, CSS3, and ES modules—no React, Vite, or node build dependencies required.
-- **Offline Reliability**: Scanning and rhyming operate 100% locally without external API dependencies.
+1. The application sends the original line, target, and analysis context to the configured language model.
+2. The model proposes candidate rewrites.
+3. Each candidate is scanned independently by the deterministic meter engine.
+4. Candidates that fail the configured target are discarded.
+5. Only candidates that pass the meter check are presented as meter-verified suggestions.
+6. The writer decides whether to accept or reject a suggestion.
+
+The meter engine verifies the implemented matra-count requirement. It does not mathematically prove that a rewrite preserves every nuance of the original meaning; meaning preservation remains a generation objective for the language model and a judgement for the writer.
 
 ---
 
-## 6. Architecture Diagram
+## Technology
+
+| Part | Technology | Responsibility |
+|---|---|---|
+| Frontend | HTML, CSS, vanilla JavaScript | Poems, Meters, and Rhymes interfaces |
+| Backend | Python, FastAPI | HTTP API and application orchestration |
+| Validation | Pydantic | Request and response models |
+| Meter analysis | Python modules in `app/meter/` | Devanagari processing, weighting, scanning, and diagnosis |
+| AI requests | HTTPX | Asynchronous requests to the configured language-model provider |
+| Configuration | python-dotenv | Local environment configuration |
+| Tests | pytest | Unit and API tests |
+| Code quality | Ruff | Linting and formatting checks |
+| Deployment | Vercel | Static frontend and Python API deployment configuration |
+
+The frontend is served as static files; it does not require a separate JavaScript build step.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TD
+    B[Browser: Poems, Meters, Rhymes] --> API[FastAPI application]
+    API --> M[Deterministic meter engine]
+    API --> R[Rhyme matcher and word list]
+    API --> L[LLM client]
+    L --> G[Rewrite candidates]
+    G --> M
+    M --> V[Verified candidates and diagnostics]
+    R --> O[API response]
+    V --> O
+    O --> B
+    B --> H[Writer accepts or rejects]
+```
+
+The meter engine and rhyme matcher can perform their core work without an LLM API key. The LLM is used for rewrite generation, not for deciding whether a line passes the meter check.
+
+---
+
+## Repository layout
 
 ```text
-              CHHAND FRONTEND
-              Poems / Meters / Rhymes
-                       |
-                       v
-                  FastAPI API
-                       |
-          +------------+------------+
-          |                         |
-          v                         v
-    METER ENGINE                AI ENGINE
-    Devanagari NLP              LLM Provider
-    Syllabification             Candidate Generation
-    Laghu/Guru                         |
-    Matra Counting                    v
-    Meter Validation           Generated Candidates
-          |                         |
-          |                         v
-          |                  METER VERIFICATION
-          |                         |
-          +------------+------------+
-                       |
-                       v
-               VERIFIED RESULTS
-                       |
-                       v
-                HUMAN APPROVAL
-                  Accept / Reject
+chhand/
+├── app/
+│   ├── api/             # FastAPI route handlers
+│   ├── llm/             # Provider client, prompts, and verification loop
+│   ├── meter/           # Devanagari processing and meter engine
+│   ├── rhyme/           # Rhyme-tail extraction and suggestions
+│   ├── config.py        # Environment-based settings
+│   ├── schemas.py       # Pydantic models
+│   └── main.py          # FastAPI application
+├── public/
+│   ├── index.html
+│   ├── styles.css
+│   └── js/              # Frontend modules
+├── data/
+│   ├── sample_dohas.json
+│   ├── sample_chaupais.json
+│   ├── broken_examples.json
+│   └── rhyme_words.txt
+├── tests/               # Meter, verification, and API tests
+├── scripts/             # Local development and meter CLI utilities
+├── training/            # MVP dataset notes and starter labelled data
+├── docs/                # Architecture and supporting documentation
+├── requirements.txt
+├── requirements-dev.txt
+├── pyproject.toml
+└── vercel.json
 ```
+
+The `training/` directory is a preparation resource only. A fine-tuned model is not part of the current MVP runtime.
 
 ---
 
-## 7. Technology Stack
+## Data included
 
-- **Backend**: Python 3.11+, FastAPI, Pydantic v2, HTTPX, python-dotenv, Uvicorn
-- **Frontend**: Vanilla ES6+ JavaScript, CSS3 (Custom Properties), Semantic HTML5
-- **Typography**: Tiro Devanagari Hindi, IBM Plex Sans, IBM Plex Mono, Noto Sans Devanagari
-- **Testing & Quality**: Pytest, Pytest-asyncio, Ruff (linting and formatting)
-- **Deployment**: Vercel Serverless Functions (`api/index.py`) + Static Asset CDN
+The current project dataset contains:
 
----
+- 17 Doha examples.
+- 6 Chaupai examples.
+- 10 deliberately broken examples used for checking meter failures and diagnostics.
+- A starter Hindi rhyme word list grouped by ending.
 
-## 8. System Workflow
+Dataset entries should retain their source references, pronunciation notes, expected pattern, and validation status. Examples that have not been reviewed should not be presented as verified test fixtures.
 
-```text
-Writer Enters Hindi Verse in Devanagari
-                  │
-                  ▼
-   Unicode Normalization (NFC + Pos Map)
-                  │
-                  ▼
-      Akshara Syllable Segmentation
-                  │
-                  ▼
-     Laghu (1) / Guru (2) Assignment
-                  │
-                  ▼
-       Meter Template Comparison
-    (Doha 13|11, Chaupai 16, Custom)
-                  │
-      ┌───────────┴───────────┐
-      │                       │
-      ▼                       ▼
-Matched Exact           Meter Violation (Over / Under)
-  [✓ In Meter]                │
-                              ▼
-                    Poet Requests "Fit This Meter"
-                              │
-                              ▼
-                    LLM Proposes Candidates
-                              │
-                              ▼
-               Deterministic Verification Engine
-                  ┌───────────┴───────────┐
-                  ▼                       ▼
-           Violates Meter          Passes Exact Count
-             [REJECT]                    │
-                                         ▼
-                                Deduplicate & Rank
-                                         │
-                                         ▼
-                               Verified Suggestions
-                                         │
-                                         ▼
-                              Poet Accepts or Rejects
-```
+The examples support development and testing; they are not a claim that the engine handles every dialect, pronunciation, or traditional prosodic convention.
 
 ---
 
-## 9. Meter Engine Explanation
+## Running locally
 
-The engine in `app/meter/` implements authentic Pingala Chhand Shastra rules:
+### Requirements
 
-### Devanagari Grapheme Classification
-- **Independent Vowels**: Short (`अ`, `इ`, `उ`, `ऋ`, `ऌ`) and Long (`आ`, `ई`, `ऊ`, `ए`, `ऐ`, `ओ`, `औ`).
-- **Dependent Vowel Signs (Matras)**: Short (`ि`, `ु`, `ृ`) and Long (`ा`, `ी`, `ू`, `े`, `ै`, `ो`, `ौ`).
-- **Modifiers**: Virama/Halant (`्`), Anusvara (`ं`), Chandrabindu (`ँ`), Visarga (`ः`), Nukta (`़`).
+- Python 3.11 or newer
+- pip
+- An API key for the configured language-model provider if you want to use AI rewriting
 
-### Matra Weight Assignment
-| Sound Type | Weight (मात्रा) | Justification |
-|---|:---:|---|
-| Short Vowel (ह्रस्व) | 1 (Laghu `•`) | Natural short vocalic duration |
-| Long Vowel (दीर्घ) | 2 (Guru `—`) | Doubled vocalic duration |
-| Short Vowel with Chandrabindu (अनुनासिक) | 1 (Laghu `•`) | Vocalic nasalization without coda closure |
-| Short Vowel with Anusvara (अनुस्वार) | 2 (Guru `—`) | Consonantal nasal closure (अंग्/अम्) |
-| Short Vowel with Visarga (विसर्ग) | 2 (Guru `—`) | Post-vocalic aspirate closure |
-| Short Vowel closed by Coda Consonant | 2 (Guru `—`) | Halant coda consonant closes syllable |
-| Short Vowel preceding Consonant Cluster | 2 (Guru `—`) | Conjunct onset lengthens preceding syllable (*संयोगे गुरु*) |
+Meter analysis and dictionary-based rhyme lookup do not require an LLM API key.
 
----
-
-## 10. Generate-and-Verify Workflow
-
-1. **Extraction**: The system isolates the broken charan along with its active target count, current syllable breakdown, and diagnosis.
-2. **Contextual Prompting**: The LLM is instructed to generate natural Hindi lines in Devanagari that preserve emotional tone, meaning, and optional rhyme requirements.
-3. **Independent Verification**: Every candidate returned by the LLM is scanned by `app.meter.scanner.scan_line()`.
-4. **Rejection Filter**:
-   - Candidates whose total matras do not equal the target are rejected immediately.
-   - Candidates with unresolved phonetic ambiguities in phonetic mode are rejected.
-   - Duplicate suggestions are removed.
-5. **Retry Loop**: If fewer than the requested verified suggestions are found, the engine retries up to `MAX_RETRIES` (default: 3) with temperature variation.
-6. **Delivery**: The user receives only verified lines with explicit `verified_status: true`.
-
----
-
-## 11. API Endpoints
-
-Once the application is running, OpenAPI documentation is available at `http://127.0.0.1:8000/docs`.
-
-### Core Endpoints
-
-#### `GET /api/health`
-Checks backend and meter engine status without disclosing credentials.
-```json
-{
-  "status": "healthy",
-  "version": "1.0.0",
-  "meter_engine": "online",
-  "llm_configured": false,
-  "environment": "development"
-}
-```
-
-#### `POST /api/analyze`
-Scans charans according to the selected meter template or custom pattern.
-```json
-{
-  "meter": "doha",
-  "charans": [
-    "मन का दीपक जब जले",
-    "मिटे अँधेरा दूर"
-  ],
-  "pronunciation_mode": "orthographic"
-}
-```
-
-#### `POST /api/rewrite`
-Generates candidate lines and verifies them against the deterministic meter engine.
-```json
-{
-  "original_line": "साथ रहेगा फिर नूर",
-  "target_matra_count": 11,
-  "selected_meter": "doha",
-  "charan_index": 1,
-  "instructions": "Keep natural tone",
-  "rhyme_requirement": "दूर"
-}
-```
-
-#### `POST /api/rhyme`
-Extracts phonetic rhyme tail and finds exact and approximate Hindi matches from the dictionary.
-```json
-{
-  "word": "नूर",
-  "limit": 10
-}
-```
-
-#### `GET /api/rhyme/families`
-Returns all dictionary ending families with word counts and sample word chips.
-```json
-{
-  "total_families": 16,
-  "families": [
-    {
-      "ending": "-ूर",
-      "count": 10,
-      "sample": ["दूर", "नूर", "ज़रूर", "मशहूर"]
-    }
-  ]
-}
-```
-
----
-
-## 12. Local Installation
+### 1. Clone the repository
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/aiyan/chhand.git
+git clone <YOUR_PUBLIC_REPOSITORY_URL>
 cd chhand
+```
 
-# 2. Create virtual environment
-python -m venv .venv
-# On Windows:
-.venv\Scripts\activate
-# On Linux/macOS:
+Replace the placeholder with the repository's public Git URL.
+
+### 2. Create and activate a virtual environment
+
+**Windows PowerShell**
+
+```powershell
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+**macOS / Linux**
+
+```bash
+python3 -m venv .venv
 source .venv/bin/activate
+```
 
-# 3. Install dependencies
+### 3. Install dependencies
+
+For application use:
+
+```bash
+pip install -r requirements.txt
+```
+
+For development and tests:
+
+```bash
 pip install -r requirements-dev.txt
 ```
 
----
+### 4. Configure environment variables
 
-## 13. Local Setup
-
-### One-Click Runners
-- **Windows (Command Prompt / Explorer)**: Double-click or run `run.bat`.
-- **Windows (PowerShell)**: Run `.\run.ps1`.
-- **Linux / macOS**: Run `./scripts/dev.sh`.
-
-### Manual Launch
-```bash
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-Open `http://127.0.0.1:8000` in any modern web browser.
-
----
-
-## 14. Environment Variables
-
-Create `.env` by copying `.env.example`:
+Copy `.env.example` to `.env` and fill in the provider settings when AI rewriting is required.
 
 ```env
-LLM_API_KEY=your_api_key_here
-LLM_MODEL=gemini-2.5-flash
-LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+LLM_API_KEY=
+LLM_MODEL=
+LLM_BASE_URL=
 MAX_RETRIES=3
 LLM_TIMEOUT_SECONDS=25
 ```
 
-> **Note:** The application functions fully offline without an API key. Meter scanning, diagnostics, custom builder, and rhyme dictionary search require zero credentials. Only AI rewrites require an LLM key.
+Keep `.env` private. Do not commit API keys or place them in frontend JavaScript.
 
----
-
-## 15. Test Commands
+### 5. Start the application
 
 ```bash
-# Run complete automated test suite
-python -m pytest
-
-# Run linter
-python -m ruff check .
-
-# Run formatter check
-python -m ruff format --check .
+uvicorn app.main:app --reload
 ```
 
----
+Open the local URL shown by Uvicorn, normally:
 
-## 16. Deployment Steps (Vercel)
+```text
+http://127.0.0.1:8000
+```
 
-The repository includes a production Vercel configuration (`vercel.json`):
-1. **Serverless Entry**: `api/index.py` routes `/api/*` requests to FastAPI.
-2. **Static Asset Serving**: Root static files are served directly from `public/`.
-3. **Deploy via Vercel CLI**:
-   ```bash
-   npm i -g vercel
-   vercel
-   ```
-4. **Environment Variables on Vercel Dashboard**:
-   Add `LLM_API_KEY`, `LLM_MODEL`, and `LLM_BASE_URL` in the project settings if AI rewriting is desired in production.
+The API health endpoint is available at:
 
----
+```text
+http://127.0.0.1:8000/api/health
+```
 
-## 17. Data Sources & Benchmark Datasets
-
-The repository includes curated, public-domain Hindi poetry benchmark datasets in `data/`:
-- **`sample_dohas.json`**: 17 Dohas by Kabir Das (*Kabir Granthavali*), Rahim (*Rahim Dohavali*), Bihari Lal (*Bihari Satsai*), and Tulsidas.
-- **`sample_chaupais.json`**: 6 Chaupais from Tulsidas's *Ramcharitmanas* (Bal Kanda) and *Hanuman Chalisa*.
-- **`broken_examples.json`**: 10 deliberately broken lines covering overcounts, undercounts, truncated words, and unsupported scripts with expected diagnostics.
-- **`rhyme_words.txt`**: 200+ curated classical Hindi poetry words indexed by phonetic rhyme tail.
+FastAPI's interactive API documentation is normally available at `/docs` during local development.
 
 ---
 
-## 18. Linguistic Assumptions & Rules
+## API overview
 
-1. **Orthographic vs. Phonetic Mode**:
-   - **Orthographic Mode (Default)**: Follows classical written Pingala Chhand rules where inherent final schwas carry 1 matra unless closed by halant.
-   - **Phonetic Mode**: Applies conservative schwa deletion for modern colloquial recitation and flags pronunciation ambiguities.
-2. **Visarga Handling**: Visarga (`ः`) closes the preceding short vowel, imparting Guru (2 matras) weight.
-3. **Anunasika vs. Anusvara**: Chandrabindu (`ँ`) is treated as pure vocalic nasalization (Laghu 1), while Anusvara (`ं`) is treated as a consonant coda closure (Guru 2).
-4. **Conjunct Onset**: Word-initial conjuncts (e.g., `क्या`, `प्रेम`, `स्थान`) do not lengthen non-existent preceding vowels; mid-word conjuncts lengthen the preceding syllable (*संयोगे गुरु*).
+The MVP exposes the following application endpoints:
 
----
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/health` | Application and service health information |
+| `POST` | `/api/analyze` | Analyze poem charans against a selected meter |
+| `POST` | `/api/rewrite` | Generate and verify alternative wording for a line |
+| `POST` | `/api/rhyme` | Find Hindi rhyme suggestions |
+| `GET` | `/api/rhyme/families` | Return available rhyme-ending groups |
 
-## 19. Current Limitations
-
-- **Dialectal Metric Shortening**: In historical Awadhi and Braj poetry, poets occasionally shortened long vowels (ह्रस्वीकरण) or lengthened short vowels (दीर्घीकरण) to fit musical meter. Manual pronunciation overrides (`pronunciation_overrides`) are provided for these exceptions.
-- **Urdu & Bengali**: Urdu Aruz meters and Bengali payar are intentionally scheduled for the finale build.
+For the exact request and response fields, use the Pydantic schemas in `app/schemas.py` and the API documentation served by the running application. The API implementation is the source of truth if this summary and the code differ.
 
 ---
 
-## 20. Built-Now vs. Finale Roadmap
+## Tests and code checks
 
-| Feature | MVP (Built Now) | Live Finale (Nov 21) |
-|---|:---:|:---:|
-| Hindi Devanagari Meter Scanner | ✅ Complete | Enhanced |
-| Doha (13 \| 11) & Chaupai (16 \| 16) | ✅ Complete | Enhanced |
-| Interactive Custom Meter Builder | ✅ Complete | Enhanced |
-| AI Generate-and-Verify Loop | ✅ Complete | Multi-model |
-| Hindi Rhyme Discovery Studio | ✅ Complete | Expanded Dictionary |
-| Accept / Reject Suggestion Controls | ✅ Complete | History & Versioning |
-| Urdu Aruz Metrical Engine | ⏳ Finale | ✅ Built for Finale |
-| Bengali Script & Payar Support | ⏳ Finale | ✅ Built for Finale |
-| Text-to-Speech (TTS) Recitation | ⏳ Finale | ✅ Built for Finale |
-| Scansion Sheet PDF / Lyric Export | ⏳ Finale | ✅ Built for Finale |
-| Fine-tuned LoRA Model Swap-in | ⏳ Finale | ✅ Built for Finale |
+Run the automated tests with:
+
+```bash
+python -m pytest -q
+```
+
+Run Ruff lint checks with:
+
+```bash
+ruff check .
+```
+
+Check formatting with:
+
+```bash
+ruff format --check .
+```
+
+The test suite covers Devanagari classification, syllable processing, weights, meter templates, scanning, rewrite verification, and API behavior. LLM-dependent tests should use mocked provider responses so that the suite does not require a live API key.
+
+A successful test run demonstrates that the implementation satisfies its test cases. It does not, by itself, establish complete coverage of Hindi pronunciation or poetic tradition.
+
+---
+
+## Deployment
+
+The repository includes Vercel configuration for the static frontend and FastAPI serverless entry point.
+
+Before deploying:
+
+1. Push the repository to the intended public Git host.
+2. Import the repository into Vercel.
+3. Configure the required server-side environment variables in the Vercel project settings.
+4. Deploy the application.
+5. Open the deployed site and test the health, analysis, rhyme, and rewrite workflows.
+6. Confirm that rewrite requests work with the configured provider and that scanning remains available if the provider is unavailable.
+
+Do not publish a deployment URL in this README until it has been deployed and tested. Add the verified URL near the top of this file when available.
+
+---
+
+## Current scope and limitations
+
+The current MVP focuses on Hindi Devanagari, Doha, Chaupai, custom matra patterns, Hindi rhyme suggestions, and AI-assisted rewriting with deterministic matra verification.
+
+The following are **not included in this MVP**:
+
+- Urdu script and Arooz analysis.
+- Bengali script and Bengali meter analysis.
+- Text-to-speech recitation or synchronized audio highlighting.
+- Lyric-sheet export.
+- A deployed fine-tuned or adapted model.
+- Full validation of every traditional rule, dialect, or pronunciation variant.
+
+These capabilities should not be described as available until they are implemented and tested.
+
+---
+
+## Design principle
+
+Chhand is intended to assist the writer, not replace the writer's judgement. The application identifies meter issues and offers alternatives, while the writer remains responsible for the poem and decides which suggestions to keep.
+
+**The engine checks the meter. The writer makes the poem.**
 
 ---
 
 ## License
 
-MIT License. Copyright (c) 2026 Chhand Contributors.
+This project is distributed under the MIT License. See [LICENSE](LICENSE) for details.
