@@ -94,6 +94,9 @@ class RewriteRequest(BaseModel):
     target_matra_count: int = Field(..., gt=0, description="Target matra count required")
     selected_meter: str = Field(default="doha", description="Name of the poetic meter")
     charan_index: int = Field(default=0, description="Index of the charan within the stanza")
+    custom_pattern: list[int] | None = Field(
+        default=None, description="Custom matra target per charan if selected_meter is custom"
+    )
     instructions: str = Field(
         default="", description="Poet guidance or specific meaning to preserve"
     )
@@ -112,19 +115,43 @@ class Suggestion(BaseModel):
     """A candidate rewrite verified strictly by the deterministic engine."""
 
     suggested_line: str = Field(..., description="The verified Hindi line")
+    text: str | None = Field(default=None, description="Alias for suggested_line")
+    replacement_line: str | None = Field(default=None, description="Alias for suggested_line")
     calculated_matra_count: int = Field(..., description="Matra count confirmed by engine")
+    actual_matras: int | None = Field(default=None, description="Alias for calculated_matra_count")
+    actual_matra_count: int | None = Field(
+        default=None, description="Alias for calculated_matra_count"
+    )
     target_matra_count: int = Field(..., description="Requested target matra count")
+    target_matras: int | None = Field(default=None, description="Alias for target_matra_count")
     verified_status: bool = Field(True, description="Always True; only verified lines are returned")
+    verified: bool = Field(True, description="Alias for verified_status")
+    verification_status: str = Field(default="matched", description="Engine verification status")
     rhyme_compatibility: bool | None = Field(
         default=None, description="True if compatible with rhyme requirement"
     )
     meaning_note: str = Field(default="", description="Explanation of adjustment made")
+    explanation: str | None = Field(default=None, description="Alias for meaning_note")
     syllables: list[SyllableDetail] = Field(
         default_factory=list, description="Verified syllable sequence"
     )
     verification_details: dict[str, Any] = Field(
         default_factory=dict, description="Diagnostic data from meter scan"
     )
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.text is None:
+            self.text = self.suggested_line
+        if self.replacement_line is None:
+            self.replacement_line = self.suggested_line
+        if self.actual_matras is None:
+            self.actual_matras = self.calculated_matra_count
+        if self.actual_matra_count is None:
+            self.actual_matra_count = self.calculated_matra_count
+        if self.target_matras is None:
+            self.target_matras = self.target_matra_count
+        if self.explanation is None:
+            self.explanation = self.meaning_note
 
 
 class RewriteResponse(BaseModel):
@@ -135,6 +162,12 @@ class RewriteResponse(BaseModel):
     )
     message: str = Field(..., description="Status explanation or guidance")
     attempts_made: int = Field(default=1, description="Number of LLM attempts executed")
+    attempts_used: int | None = Field(default=None, description="Alias for attempts_made")
+    provider: str = Field(default="gemini", description="AI model provider name")
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.attempts_used is None:
+            self.attempts_used = self.attempts_made
 
 
 class RhymeRequest(BaseModel):
@@ -172,10 +205,15 @@ class RhymeResponse(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    """Application health and readiness status."""
+    """Application health, version, and provider readiness status."""
 
-    status: str = "healthy"
+    status: str = "ok"
     version: str = "1.0.0"
-    meter_engine: str = "online"
-    llm_configured: bool = False
+    meter_engine: dict[str, Any] | str = Field(
+        default_factory=lambda: {"available": True}, description="Meter engine availability"
+    )
+    llm: dict[str, Any] | None = Field(
+        default=None, description="LLM provider configuration status"
+    )
+    llm_configured: bool = Field(default=False, description="Legacy indicator for LLM availability")
     environment: str = "development"

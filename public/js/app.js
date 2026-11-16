@@ -502,7 +502,7 @@ class ChhandApp {
     }
 
     this.btnTriggerRewrite.disabled = true;
-    this.btnTriggerRewrite.innerHTML = '<span class="loading-spinner"></span> Scanning candidates...';
+    this.btnTriggerRewrite.innerHTML = '<span class="loading-spinner"></span> Finding Hindi alternatives that fit your rhythm...';
 
     try {
       // Extract rhyme requirement from partner charan if in rhyming position
@@ -521,6 +521,7 @@ class ChhandApp {
         target_matra_count: this.activeTargetMatras,
         selected_meter: this.currentMeter,
         charan_index: this.activeCharanGlobalIndex,
+        custom_pattern: this.currentMeter === "custom" ? this.customPattern : null,
         instructions: "Preserve the original meaning and natural poetic tone.",
         rhyme_requirement: rhymeRequirement,
         max_suggestions: 3,
@@ -546,8 +547,10 @@ class ChhandApp {
       this.suggestionsList.textContent = "";
       const errBox = document.createElement("div");
       errBox.className = "empty-state";
-      if (err.code === "LLM_NOT_CONFIGURED") {
-        errBox.textContent = "AI rewrite requires LLM_API_KEY to be set in .env. The deterministic meter scanner works offline.";
+      if (err.code === "GEMINI_NOT_CONFIGURED" || err.code === "LLM_NOT_CONFIGURED") {
+        errBox.textContent = "AI suggestions are currently unavailable. Meter analysis and rhyme search are still available.";
+      } else if (err.code === "NO_VERIFIED_SUGGESTIONS" || err.code === "NO_VERIFIED_REWRITES") {
+        errBox.textContent = "We couldn't find a verified alternative this time. Try changing your instructions or try again.";
       } else {
         errBox.textContent = err.message || "Failed to generate verified rewrites.";
       }

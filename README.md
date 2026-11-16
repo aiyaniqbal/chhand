@@ -106,7 +106,7 @@ The meter engine verifies the implemented matra-count requirement. It does not m
 | Backend | Python, FastAPI | HTTP API and application orchestration |
 | Validation | Pydantic | Request and response models |
 | Meter analysis | Python modules in `app/meter/` | Devanagari processing, weighting, scanning, and diagnosis |
-| AI requests | HTTPX | Asynchronous requests to the configured language-model provider |
+| AI requests | Google GenAI SDK (`google-genai`) | Asynchronous requests via Gemini Interactions API |
 | Configuration | python-dotenv | Local environment configuration |
 | Tests | pytest | Unit and API tests |
 | Code quality | Ruff | Linting and formatting checks |
@@ -241,11 +241,11 @@ pip install -r requirements-dev.txt
 Copy `.env.example` to `.env` and fill in the provider settings when AI rewriting is required.
 
 ```env
-LLM_API_KEY=
-LLM_MODEL=
-LLM_BASE_URL=
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.8-flash
+GEMINI_TIMEOUT_SECONDS=30
+GEMINI_MAX_CANDIDATES=4
 MAX_RETRIES=3
-LLM_TIMEOUT_SECONDS=25
 ```
 
 Keep `.env` private. Do not commit API keys or place them in frontend JavaScript.

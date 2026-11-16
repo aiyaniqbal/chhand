@@ -36,6 +36,20 @@ class InvalidMeterError(ChhandAppError):
         )
 
 
+class InvalidMeterRequestError(ChhandAppError):
+    def __init__(
+        self,
+        message: str = "Invalid meter or charan target specified.",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(
+            code="INVALID_METER_REQUEST",
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=details,
+        )
+
+
 class InvalidInputError(ChhandAppError):
     def __init__(
         self,
@@ -64,46 +78,95 @@ class InvalidCustomPatternError(ChhandAppError):
         )
 
 
-class LLMConfigurationError(ChhandAppError):
+class GeminiNotConfiguredError(ChhandAppError):
     def __init__(
         self,
-        message: str = "LLM API key is not configured on this server.",
+        message: str = "AI suggestions are currently unavailable. Meter analysis and rhyme search are still available.",
         details: dict[str, Any] | None = None,
     ):
         super().__init__(
-            code="LLM_NOT_CONFIGURED",
+            code="GEMINI_NOT_CONFIGURED",
             message=message,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             details=details,
         )
 
 
-class LLMTimeoutError(ChhandAppError):
+class GeminiAuthError(ChhandAppError):
     def __init__(
         self,
-        message: str = "The LLM service timed out while generating suggestions.",
+        message: str = "Authentication failed with the Gemini API.",
         details: dict[str, Any] | None = None,
     ):
         super().__init__(
-            code="LLM_TIMEOUT",
+            code="GEMINI_AUTH_ERROR",
+            message=message,
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            details=details,
+        )
+
+
+class GeminiRateLimitError(ChhandAppError):
+    def __init__(
+        self,
+        message: str = "Gemini API rate limit exceeded. Please wait a moment and try again.",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(
+            code="GEMINI_RATE_LIMIT",
+            message=message,
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            details=details,
+        )
+
+
+class GeminiTimeoutError(ChhandAppError):
+    def __init__(
+        self,
+        message: str = "Gemini API request timed out.",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(
+            code="GEMINI_TIMEOUT",
             message=message,
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             details=details,
         )
 
 
-class LLMProviderError(ChhandAppError):
+class GeminiProviderError(ChhandAppError):
     def __init__(
         self,
-        message: str = "Error returned from LLM provider.",
+        message: str = "Error returned from Gemini API provider.",
         details: dict[str, Any] | None = None,
     ):
         super().__init__(
-            code="LLM_PROVIDER_ERROR",
+            code="GEMINI_PROVIDER_ERROR",
             message=message,
             status_code=status.HTTP_502_BAD_GATEWAY,
             details=details,
         )
+
+
+class GeminiInvalidResponseError(ChhandAppError):
+    def __init__(
+        self,
+        message: str = "Gemini returned a response that could not be parsed into the expected schema.",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(
+            code="GEMINI_INVALID_RESPONSE",
+            message=message,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            details=details,
+        )
+
+
+# Backward-compatible aliases
+LLMConfigurationError = GeminiNotConfiguredError
+GeminiConfigurationError = GeminiNotConfiguredError
+LLMTimeoutError = GeminiTimeoutError
+LLMProviderError = GeminiProviderError
 
 
 class NoVerifiedRewritesError(ChhandAppError):
@@ -113,61 +176,53 @@ class NoVerifiedRewritesError(ChhandAppError):
         details: dict[str, Any] | None = None,
     ):
         super().__init__(
-            code="NO_VERIFIED_REWRITES",
+            code="NO_VERIFIED_SUGGESTIONS",
             message=message,
-            status_code=status.HTTP_200_OK,  # Returned as 200 with empty list according to spec
+            status_code=status.HTTP_200_OK,
             details=details,
         )
 
 
-def format_error_response(
-    code: str, message: str, details: dict[str, Any] | None = None
-) -> dict[str, Any]:
-    """Uniform error response structure."""
-    return {
-        "error": {
-            "code": code,
-            "message": message,
-            "details": details or {},
-        }
-    }
-
-
 def register_error_handlers(app: FastAPI) -> None:
-    """Registers exception handlers on the FastAPI instance."""
+    """Registers standard JSON exception handlers on the FastAPI app."""
 
     @app.exception_handler(ChhandAppError)
-    async def app_error_handler(request: Request, exc: ChhandAppError) -> JSONResponse:
+    async def chhand_app_error_handler(_request: Request, exc: ChhandAppError) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
-            content=format_error_response(exc.code, exc.message, exc.details),
+            content={
+                "error": {
+                    "code": exc.code,
+                    "message": exc.message,
+                    "details": exc.details,
+                }
+            },
         )
 
     @app.exception_handler(RequestValidationError)
     async def validation_error_handler(
-        request: Request, exc: RequestValidationError
+        _request: Request, exc: RequestValidationError
     ) -> JSONResponse:
-        clean_errors = []
-        for err in exc.errors():
-            loc = " -> ".join(str(item) for item in err.get("loc", []))
-            clean_errors.append(f"{loc}: {err.get('msg', 'validation error')}")
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content=format_error_response(
-                code="VALIDATION_ERROR",
-                message="The request body did not pass validation.",
-                details={"errors": clean_errors},
-            ),
+            content={
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Request payload failed schema validation.",
+                    "details": exc.errors(),
+                }
+            },
         )
 
     @app.exception_handler(Exception)
-    async def generic_error_handler(request: Request, exc: Exception) -> JSONResponse:
-        # Never leak secrets or internal trace details
+    async def unhandled_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=format_error_response(
-                code="INTERNAL_SERVER_ERROR",
-                message="An unexpected server error occurred. Please try again.",
-                details={},
-            ),
+            content={
+                "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": "An unexpected error occurred. Please try again later.",
+                    "details": {"type": type(exc).__name__},
+                }
+            },
         )

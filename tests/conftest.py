@@ -55,30 +55,62 @@ def broken_examples() -> list[dict[str, Any]]:
 
 
 class MockLLMClient:
-    """Mock asynchronous LLM client for tests without calling external APIs."""
+    """Mock asynchronous Gemini client for tests without calling external APIs."""
 
     def __init__(
         self,
         response_data: dict[str, Any] | None = None,
+        candidates: list[tuple[str, str]] | None = None,
         should_fail: bool = False,
         should_timeout: bool = False,
+        should_auth_fail: bool = False,
+        should_rate_limit: bool = False,
+        is_configured: bool = True,
     ):
         self.response_data = response_data or {}
+        self.candidates = candidates
         self.should_fail = should_fail
         self.should_timeout = should_timeout
-        self.is_configured = True
+        self.should_auth_fail = should_auth_fail
+        self.should_rate_limit = should_rate_limit
+        self.is_configured = is_configured
+
+    async def generate_candidates(
+        self,
+        prompt: str,
+        system_instruction: str | None = None,
+        max_candidates: int = 4,
+    ) -> list[tuple[str, str]]:
+        if not self.is_configured:
+            from app.errors import GeminiNotConfiguredError
+
+            raise GeminiNotConfiguredError()
+        if self.should_auth_fail:
+            from app.errors import GeminiAuthError
+
+            raise GeminiAuthError("Mock auth error.")
+        if self.should_rate_limit:
+            from app.errors import GeminiRateLimitError
+
+            raise GeminiRateLimitError()
+        if self.should_timeout:
+            from app.errors import GeminiTimeoutError
+
+            raise GeminiTimeoutError("Mock timeout exceeded.")
+        if self.should_fail:
+            from app.errors import GeminiProviderError
+
+            raise GeminiProviderError("Mock provider error.")
+
+        if self.candidates is not None:
+            return self.candidates
+
+        cands = self.response_data.get("candidates", [])
+        return [(c.get("line") or c.get("text") or "", c.get("note") or "") for c in cands]
 
     async def generate_json(
         self, messages: list[dict[str, str]], temperature: float = 0.7
     ) -> dict[str, Any]:
-        if self.should_timeout:
-            from app.errors import LLMTimeoutError
-
-            raise LLMTimeoutError("Mock timeout exceeded.")
-        if self.should_fail:
-            from app.errors import LLMProviderError
-
-            raise LLMProviderError("Mock provider error.")
         return self.response_data
 
 
