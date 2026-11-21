@@ -1,0 +1,29 @@
+[
+  {
+    "id": "matrabritta_01",
+    "text": "নীল নবঘনে আষাঢ় গগনে",
+    "meter": "matrabritta_12",
+    "expected_count": 12,
+    "grouping": "6 + 6",
+    "source": "রবীন্দ্রনাথ ঠাকুর, 'বৃষ্টি পড়ে টাপুর টুপুর' / ক্ষণিকা (১৯০০)",
+    "notes": "Classic 6+6 Matrabritta lyric by Rabindranath Tagore."
+  },
+  {
+    "id": "matrabritta_02",
+    "text": "তিমির দিগন্ত রেখা",
+    "meter": "matrabritta_10",
+    "expected_count": 10,
+    "grouping": "5 + 5",
+    "source": "রবীন্দ্রনাথ ঠাকুর, সঞ্চয়িতা",
+    "notes": "Tagore lyric in 10-matra Matrabritta meter."
+  },
+  {
+    "id": "matrabritta_03",
+    "text": "মেঘের কোলে রোদ হেসেছে",
+    "meter": "matrabritta_14",
+    "expected_count": 14,
+    "grouping": "7 + 7",
+    "source": "রবীন্দ্রনাথ ঠাকুর, গীতবিতান",
+    "notes": "Song lyric in 14-matra rhythmic Matrabritta meter."
+  }
+]

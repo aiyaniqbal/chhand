@@ -1,0 +1,29 @@
+[
+  {
+    "id": "swarabritta_01",
+    "text": "বৃষ্টি পড়ে টাপুর টুপুর",
+    "meter": "swarabritta_basic",
+    "expected_count": 8,
+    "grouping": "4 + 4",
+    "source": "রবীন্দ্রনাথ ঠাকুর, শিশু (১৯০৩) / লোকছড়া",
+    "notes": "Classic Bengali folk rhyme rhythm carrying 4+4 Dal pulses."
+  },
+  {
+    "id": "swarabritta_02",
+    "text": "নদে এলো বান",
+    "meter": "swarabritta_half",
+    "expected_count": 4,
+    "grouping": "4",
+    "source": "Traditional Bengali rhyme",
+    "notes": "4-dal rhythmic cadence."
+  },
+  {
+    "id": "swarabritta_03",
+    "text": "খোকন যাবে মাছ ধরতে",
+    "meter": "swarabritta_basic",
+    "expected_count": 8,
+    "grouping": "4 + 4",
+    "source": "Traditional nursery rhyme",
+    "notes": "Classic nursery rhyme rhythm."
+  }
+]

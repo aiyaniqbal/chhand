@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ChhandFineTuningRecord",
+  "description": "Schema for Chhand multilingual supervised poetry fine-tuning records.",
+  "type": "object",
+  "required": [
+    "language",
+    "script",
+    "task",
+    "input",
+    "expected_output",
+    "provenance"
+  ],
+  "properties": {
+    "language": {
+      "type": "string",
+      "enum": ["hi", "ur", "bn"]
+    },
+    "script": {
+      "type": "string",
+      "enum": ["Devanagari", "Nastaliq", "Bengali"]
+    },
+    "task": {
+      "type": "string",
+      "enum": ["meter_aware_poetry_rewrite", "poetry_generation", "taqti_matching"]
+    },
+    "input": {
+      "type": "object",
+      "required": ["original_text", "meter"],
+      "properties": {
+        "original_text": {"type": "string", "minLength": 1},
+        "meter": {"type": "string", "minLength": 1},
+        "target_pattern": {
+          "oneOf": [
+            {"type": "array", "items": {"type": "integer"}},
+            {"type": "string"}
+          ]
+        },
+        "meaning": {"type": "string"},
+        "style": {"type": "string"}
+      }
+    },
+    "expected_output": {
+      "type": "object",
+      "required": ["text", "validation_status"],
+      "properties": {
+        "text": {"type": "string", "minLength": 1},
+        "validation_status": {
+          "type": "string",
+          "enum": ["reviewed", "verified", "authentic"]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["author", "source", "license"],
+      "properties": {
+        "author": {"type": "string", "minLength": 1},
+        "source": {"type": "string", "minLength": 1},
+        "license": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

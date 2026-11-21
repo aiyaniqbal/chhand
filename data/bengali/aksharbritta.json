@@ -1,0 +1,29 @@
+[
+  {
+    "id": "aksharbritta_payar_01",
+    "text": "মহাভারতের কথা অমৃত সমান",
+    "meter": "payar",
+    "expected_count": 14,
+    "grouping": "8 + 6",
+    "source": "কাশীরাম দাস, কাশীরামীদাসী মহাভারত (আদিপর্ব)",
+    "notes": "Classic Payar hemistich carrying exactly 14 aksharas (8 + 6 caesura)."
+  },
+  {
+    "id": "aksharbritta_payar_02",
+    "text": "কাশীরাম দাস কহে শুনে পুণ্যবান",
+    "meter": "payar",
+    "expected_count": 14,
+    "grouping": "8 + 6",
+    "source": "কাশীরাম দাস, কাশীরামীদাসী মহাভারত (ভণিতা)",
+    "notes": "Classic Payar concluding line carrying 14 aksharas."
+  },
+  {
+    "id": "aksharbritta_sonnet_01",
+    "text": "হে বঙ্গ ভাণ্ডারে তব বিবিধ রতন",
+    "meter": "chaturdashpadi",
+    "expected_count": 14,
+    "grouping": "8 + 6",
+    "source": "মাইকেল মধুসূদন দত্ত, 'বঙ্গভাষা' (১৮৬০)",
+    "notes": "Celebrated opening line of Michael Madhusudan Dutt's Bengali sonnet."
+  }
+]

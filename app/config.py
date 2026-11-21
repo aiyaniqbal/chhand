@@ -34,6 +34,27 @@ class Settings:
     GEMINI_MAX_CANDIDATES: int = int(os.getenv("GEMINI_MAX_CANDIDATES", "4"))
     MAX_RETRIES: int = int(os.getenv("MAX_RETRIES", "3"))
 
+    # TTS model configuration
+    GEMINI_TTS_MODEL: str = os.getenv("GEMINI_TTS_MODEL", "gemini-3.8-flash-tts")
+    GEMINI_TTS_LITE_MODEL: str = os.getenv("GEMINI_TTS_LITE_MODEL", "gemini-3.8-flash-lite-tts")
+    GEMINI_TTS_TIMEOUT_SECONDS: float = float(os.getenv("GEMINI_TTS_TIMEOUT_SECONDS", "60.0"))
+
+    # Fine-tuned / tuned model overrides per language
+    GEMINI_TUNED_HINDI_MODEL: str = os.getenv("GEMINI_TUNED_HINDI_MODEL", "")
+    GEMINI_TUNED_URDU_MODEL: str = os.getenv("GEMINI_TUNED_URDU_MODEL", "")
+    GEMINI_TUNED_BENGALI_MODEL: str = os.getenv("GEMINI_TUNED_BENGALI_MODEL", "")
+
+    # Google Cloud (Vertex AI) configuration
+    GOOGLE_CLOUD_PROJECT: str = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+    GOOGLE_CLOUD_LOCATION: str = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+
+    # Feature flags
+    ENABLE_POETRY_GENERATION: bool = os.getenv("ENABLE_POETRY_GENERATION", "true").lower() == "true"
+    ENABLE_TTS: bool = os.getenv("ENABLE_TTS", "true").lower() == "true"
+    ENABLE_URDU: bool = os.getenv("ENABLE_URDU", "true").lower() == "true"
+    ENABLE_BENGALI: bool = os.getenv("ENABLE_BENGALI", "true").lower() == "true"
+    ENABLE_FINE_TUNED_MODEL: bool = os.getenv("ENABLE_FINE_TUNED_MODEL", "false").lower() == "true"
+
     # Legacy attributes for backward compatibility
     @property
     def LLM_API_KEY(self) -> str:

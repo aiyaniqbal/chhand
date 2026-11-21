@@ -1,0 +1,29 @@
+[
+  {
+    "id": "broken_payar_extra_words",
+    "text": "মহাভারতের পরম পবিত্র কথা অমৃত সমান অতি মনোরম",
+    "intended_meter": "payar",
+    "expected_target": 14,
+    "actual_measured": 20,
+    "expected_status": "over",
+    "diagnostic": "Line has 20 aksharas (6 over target 14)."
+  },
+  {
+    "id": "broken_payar_incomplete",
+    "text": "মহাভারতের কথা",
+    "intended_meter": "payar",
+    "expected_target": 14,
+    "actual_measured": 7,
+    "expected_status": "under",
+    "diagnostic": "Line has 7 aksharas (7 under target 14)."
+  },
+  {
+    "id": "broken_swarabritta_truncated",
+    "text": "বৃষ্টি পড়ে",
+    "intended_meter": "swarabritta_basic",
+    "expected_target": 8,
+    "actual_measured": 4,
+    "expected_status": "under",
+    "diagnostic": "Line has 4 pulses (4 under target 8)."
+  }
+]

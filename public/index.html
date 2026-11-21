@@ -7,10 +7,10 @@
   <meta name="description" content="AI-Powered, Meter-Aware Hindi Poetry and Lyric Co-Writer. Scans Doha, Chaupai, and custom matrik meters with deterministic precision.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
-  <!-- Google Fonts for Typography System -->
+  <!-- Google Fonts for Typography System (Hindi Devanagari, Urdu Nastaliq, Bengali) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@400;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/styles.css">
 </head>
@@ -27,6 +27,8 @@
       <nav aria-label="Primary Navigation">
         <ul class="nav-links">
           <li><a href="#poems" class="nav-link active">Poems</a></li>
+          <li><a href="#create" class="nav-link" id="nav-create-btn">Create</a></li>
+          <li><a href="#recite" class="nav-link" id="nav-recite-btn">Recite</a></li>
           <li><a href="#meters" class="nav-link" id="nav-meters-btn">Meters</a></li>
           <li><a href="#rhymes" class="nav-link" id="nav-rhymes-btn">Rhymes</a></li>
         </ul>
@@ -158,6 +160,9 @@
         <div class="canvas-actions">
           <button type="button" id="btn-add-couplet" class="btn-add-couplet">+ Add couplet</button>
           <button type="button" id="btn-clear-poem" class="btn-add-couplet" style="margin-left: 0.5rem;">Clear</button>
+          <button type="button" id="btn-export-poem" class="btn-demo-action" style="margin-left: auto;">
+            <span>📄 Export Sheet</span>
+          </button>
         </div>
 
       </section>
@@ -205,17 +210,30 @@
 
     </div>
 
-    <!-- View 2: Meters View -->
+    <!-- View 2: Create View (Multilingual AI Generation) -->
+    <div id="create-view" class="app-view create-view-layout" data-view="create" style="display: none;" hidden>
+      <!-- Rendered by CreatePage -->
+    </div>
+
+    <!-- View 3: Recite View (TTS Poetry Recitation Studio) -->
+    <div id="recite-view" class="app-view recite-view-layout" data-view="recite" style="display: none;" hidden>
+      <!-- Rendered by RecitePage -->
+    </div>
+
+    <!-- View 4: Meters View -->
     <div id="meters-view" class="app-view meters-view-layout" data-view="meters" style="display: none;" hidden>
       <!-- Rendered by MetersPage -->
     </div>
 
-    <!-- View 3: Rhymes View -->
+    <!-- View 5: Rhymes View -->
     <div id="rhymes-view" class="app-view rhymes-view-layout" data-view="rhymes" style="display: none;" hidden>
       <!-- Rendered by RhymesPage -->
     </div>
 
   </main>
+
+  <!-- Lyric Sheet Export Modal Container -->
+  <div id="export-modal" class="modal-backdrop" style="display: none;" hidden></div>
 
   <!-- Scansion Detail Modal Container -->
   <div id="meter-detail-modal" class="modal-backdrop" style="display: none;" hidden></div>

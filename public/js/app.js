@@ -5,9 +5,12 @@
  */
 
 import { analyzePoem, findRhymes, requestRewrite } from "./api.js";
+import { CreatePage } from "./createPage.js";
 import { PoetryEditor } from "./editor.js";
+import { ExportPanel } from "./exportPanel.js";
 import { MetersPage } from "./metersPage.js";
 import { NavigationRouter } from "./navigation.js";
+import { RecitePage } from "./recitePage.js";
 import { RhymesPage } from "./rhymesPage.js";
 import { renderRhymePills, renderSuggestions } from "./suggestions.js";
 import { METERS, parseCustomPattern } from "./templates.js";
@@ -75,6 +78,7 @@ class ChhandApp {
 
     this.btnAddCouplet = document.getElementById("btn-add-couplet");
     this.btnClearPoem = document.getElementById("btn-clear-poem");
+    this.btnExportPoem = document.getElementById("btn-export-poem");
 
     this.termPopover = document.getElementById("term-popover");
     this.termPopoverTitle = document.getElementById("term-popover-title");
@@ -166,6 +170,25 @@ class ChhandApp {
         },
       });
     }
+
+    // 4. Lyric Sheet Export Panel
+    this.exportPanel = new ExportPanel({
+      showToast: (msg) => this.showToast(msg),
+    });
+
+    // 5. Create Page (Multilingual AI Studio)
+    this.createPage = new CreatePage({
+      onSendToEditor: (poem) => this.handleImportGeneratedToEditor(poem),
+      onSendToRecite: (poem) => this.handleImportGeneratedToRecite(poem),
+      onOpenExport: (poem) => this.handleOpenExportFromGenerated(poem),
+      showToast: (msg) => this.showToast(msg),
+    });
+
+    // 6. Recite Page (TTS Studio)
+    this.recitePage = new RecitePage({
+      getEditorPoem: () => this.getEditorPoemLines(),
+      showToast: (msg) => this.showToast(msg),
+    });
   }
 
   handleProgressUpdated(progress) {
@@ -303,6 +326,21 @@ class ChhandApp {
         this.showToast("Editor cleared");
       }
     });
+
+    // Export Sheet Button
+    if (this.btnExportPoem) {
+      this.btnExportPoem.addEventListener("click", () => {
+        const lines = this.getEditorPoemLines();
+        const title = document.getElementById("poem-title-input")?.value.trim() || "मेरी रचना";
+        const meterName = this.currentMeter === "doha" ? "दोहा (Doha)" : this.currentMeter === "chaupai" ? "चौपाई (Chaupai)" : "Custom Meter";
+        this.exportPanel.open({
+          lines,
+          title,
+          language: "hi",
+          meter: meterName,
+        });
+      });
+    }
 
     // Terminology help buttons
     document.querySelectorAll(".btn-term-help").forEach(btn => {
@@ -598,6 +636,62 @@ class ChhandApp {
     } catch (err) {
       console.error("Rhyme fetch error:", err);
     }
+  }
+
+  getEditorPoemLines() {
+    const flat = this.editor.getFlatCharans();
+    const lines = [];
+    for (let i = 0; i < flat.length; i += 2) {
+      const c1 = (flat[i] || "").trim();
+      const c2 = (flat[i + 1] || "").trim();
+      if (c1 || c2) {
+        if (c1 && c2) {
+          lines.push(`${c1}, ${c2}`);
+        } else {
+          lines.push(c1 || c2);
+        }
+      }
+    }
+    return lines.length > 0 ? lines : flat.filter(Boolean);
+  }
+
+  handleImportGeneratedToEditor(poem) {
+    if (!poem || !poem.stanzas) return;
+    const allLines = poem.stanzas.flat().map(l => (typeof l === "string" ? l : l.text));
+
+    // If Hindi, populate charans
+    if (poem.language === "hi") {
+      this.editor.clearAll();
+      allLines.forEach((lineText, idx) => {
+        this.editor.setCharanText(idx, lineText);
+      });
+      this.router.navigateTo("poems");
+      this.runAnalysis(this.editor.getFlatCharans());
+      this.showToast("Imported generated verse into Poems editor.");
+    } else {
+      this.showToast(`Note: Current interactive matra editor supports Devanagari. Sent ${poem.language.toUpperCase()} to Reciter.`);
+      this.handleImportGeneratedToRecite(poem);
+    }
+  }
+
+  handleImportGeneratedToRecite(poem) {
+    if (!poem || !poem.stanzas) return;
+    const allLines = poem.stanzas.flat().map(l => (typeof l === "string" ? l : l.text));
+    this.recitePage.setPoemLines(allLines, poem.language || "hi");
+    this.router.navigateTo("recite");
+    this.showToast("Loaded verse into Recitation studio.");
+  }
+
+  handleOpenExportFromGenerated(poem) {
+    if (!poem || !poem.stanzas) return;
+    const allLines = poem.stanzas.flat().map(l => (typeof l === "string" ? l : l.text));
+    const title = poem.form_or_bahr ? `${poem.form_or_bahr.toUpperCase()} Composition` : "रचना";
+    this.exportPanel.open({
+      lines: allLines,
+      title,
+      language: poem.language || "hi",
+      meter: poem.poem_form || "",
+    });
   }
 }
 

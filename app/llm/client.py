@@ -173,6 +173,92 @@ class LLMClient:
 
         return []
 
+    async def generate_structured_json(
+        self,
+        prompt: str,
+        system_instruction: str | None = None,
+        schema: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """
+        Calls Gemini Interactions API requesting structured JSON and returns the parsed dict.
+        """
+        client = self._get_genai_client()
+        full_input = prompt
+        if system_instruction:
+            full_input = f"{system_instruction}\n\n{prompt}"
+
+        response_format: dict[str, Any] = {
+            "type": "text",
+            "mime_type": "application/json",
+        }
+        if schema:
+            response_format["schema"] = schema
+
+        models_to_try = [self.model]
+        if self.model != "gemini-flash-lite-latest":
+            models_to_try.append("gemini-flash-lite-latest")
+
+        last_error: Exception | None = None
+
+        for idx, model_name in enumerate(models_to_try):
+            has_fallback = idx < len(models_to_try) - 1
+            attempt_timeout = (
+                min(self.timeout_seconds, 12.0) if has_fallback else self.timeout_seconds
+            )
+
+            try:
+                interaction = await asyncio.wait_for(
+                    client.aio.interactions.create(
+                        model=model_name,
+                        input=full_input,
+                        response_format=response_format,
+                        store=False,
+                        timeout=attempt_timeout,
+                    ),
+                    timeout=attempt_timeout + 1.0,
+                )
+
+                output_text = getattr(interaction, "output_text", None) or ""
+                if not output_text.strip():
+                    raise GeminiInvalidResponseError("Gemini returned an empty interaction output.")
+
+                # Clean markdown backticks if any
+                clean_text = output_text.strip()
+                if clean_text.startswith("```json"):
+                    clean_text = clean_text[7:]
+                if clean_text.startswith("```"):
+                    clean_text = clean_text[3:]
+                if clean_text.endswith("```"):
+                    clean_text = clean_text[:-3]
+                clean_text = clean_text.strip()
+
+                return json.loads(clean_text)
+
+            except TimeoutError:
+                logger.info(f"Model {model_name} timed out in structured json generation.")
+                last_error = GeminiTimeoutError(
+                    f"Gemini request timed out after {attempt_timeout} seconds."
+                )
+                continue
+            except Exception as exc:
+                err_str = str(exc)
+                if "401" in err_str or "API_KEY_INVALID" in err_str:
+                    raise GeminiAuthError("Gemini API key is invalid or unauthorized.") from exc
+                elif "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                    raise GeminiRateLimitError() from exc
+                elif "503" in err_str and model_name != models_to_try[-1]:
+                    last_error = exc
+                    continue
+                else:
+                    last_error = GeminiProviderError(f"Gemini provider error: {err_str}")
+
+        if last_error:
+            if isinstance(last_error, (GeminiTimeoutError, GeminiAuthError, GeminiRateLimitError)):
+                raise last_error
+            raise GeminiProviderError(f"Gemini generation failed: {last_error}")
+
+        return {}
+
     async def generate_json(
         self,
         messages: list[dict[str, str]],

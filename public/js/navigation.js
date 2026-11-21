@@ -1,11 +1,11 @@
 /**
  * Client-side Router and Navigation controller for Chhand.
- * Manages view switching between Poems, Meters, and Rhymes.
+ * Manages view switching between Poems, Create, Recite, Meters, and Rhymes.
  */
 
 export class NavigationRouter {
   constructor(options = {}) {
-    this.routes = ["poems", "meters", "rhymes"];
+    this.routes = ["poems", "create", "recite", "meters", "rhymes"];
     this.currentRoute = "poems";
     this.onRouteChanged = options.onRouteChanged || null;
 
